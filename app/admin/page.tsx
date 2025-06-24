@@ -37,6 +37,7 @@ const initialProperties = [
     bathrooms: 2,
     featured: true,
     status: "Available",
+    amenities: ["wifi", "parking", "fitness"],
   },
   {
     id: 2,
@@ -51,6 +52,7 @@ const initialProperties = [
     bathrooms: 3,
     featured: false,
     status: "Available",
+    amenities: ["pool", "kitchen", "ac", "security", "concierge"],
   },
   {
     id: 3,
@@ -65,7 +67,24 @@ const initialProperties = [
     bathrooms: 1,
     featured: false,
     status: "Rented",
+    amenities: ["laundry", "balcony", "elevator", "pet"],
   },
+]
+
+// Available amenities with icons
+const availableAmenities = [
+  { id: "wifi", name: "High-speed WiFi", icon: "Wifi" },
+  { id: "parking", name: "Parking included", icon: "Car" },
+  { id: "fitness", name: "Fitness center", icon: "Dumbbell" },
+  { id: "pool", name: "Swimming pool", icon: "Waves" },
+  { id: "kitchen", name: "Modern kitchen", icon: "ChefHat" },
+  { id: "ac", name: "Air conditioning", icon: "Wind" },
+  { id: "security", name: "Security system", icon: "Camera" },
+  { id: "concierge", name: "24/7 concierge", icon: "Shield" },
+  { id: "laundry", name: "In-unit laundry", icon: "Shirt" },
+  { id: "balcony", name: "Private balcony", icon: "Home" },
+  { id: "elevator", name: "Elevator access", icon: "ArrowUp" },
+  { id: "pet", name: "Pet friendly", icon: "Heart" },
 ]
 
 export default function AdminPage() {
@@ -85,6 +104,7 @@ export default function AdminPage() {
     featured: false,
     status: "Available",
     images: [],
+    amenities: [], // Add this line
   })
 
   const handleInputChange = (field, value) => {
@@ -109,8 +129,44 @@ export default function AdminPage() {
     handleInputChange("images", newImages)
   }
 
+  const handleAmenityToggle = (amenityId) => {
+    const currentAmenities = formData.amenities || []
+    const isSelected = currentAmenities.includes(amenityId)
+
+    if (isSelected) {
+      handleInputChange(
+        "amenities",
+        currentAmenities.filter((id) => id !== amenityId),
+      )
+    } else {
+      handleInputChange("amenities", [...currentAmenities, amenityId])
+    }
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
+    console.log("Form submitted with data:", formData)
+
+    // Validate required fields
+    if (
+      !formData.title ||
+      !formData.location ||
+      !formData.price ||
+      !formData.type ||
+      !formData.bedrooms ||
+      !formData.bathrooms
+    ) {
+      alert("Please fill in all required fields")
+      return
+    }
+
+    const propertyData = {
+      ...formData,
+      price: Number.parseInt(formData.price),
+      bedrooms: Number.parseInt(formData.bedrooms),
+      bathrooms: Number.parseInt(formData.bathrooms),
+      amenities: formData.amenities || [],
+    }
 
     if (editingProperty) {
       // Update existing property
@@ -119,10 +175,7 @@ export default function AdminPage() {
           p.id === editingProperty.id
             ? {
                 ...p,
-                ...formData,
-                price: Number.parseInt(formData.price),
-                bedrooms: Number.parseInt(formData.bedrooms),
-                bathrooms: Number.parseInt(formData.bathrooms),
+                ...propertyData,
               }
             : p,
         ),
@@ -132,32 +185,16 @@ export default function AdminPage() {
       // Add new property
       const newProperty = {
         id: Date.now(),
-        ...formData,
-        price: Number.parseInt(formData.price),
-        bedrooms: Number.parseInt(formData.bedrooms),
-        bathrooms: Number.parseInt(formData.bathrooms),
+        ...propertyData,
         rating: 0,
         reviews: 0,
-        image: "/placeholder.svg?height=200&width=300",
+        image: uploadedImages.length > 0 ? uploadedImages[0] : "/placeholder.svg?height=200&width=300",
       }
       setProperties((prev) => [...prev, newProperty])
     }
 
     // Reset form
-    setFormData({
-      title: "",
-      location: "",
-      price: "",
-      type: "",
-      bedrooms: "",
-      bathrooms: "",
-      description: "",
-      featured: false,
-      status: "Available",
-      images: [],
-    })
-    setUploadedImages([])
-    setImageFiles([])
+    resetForm()
     setIsAddDialogOpen(false)
   }
 
@@ -174,6 +211,7 @@ export default function AdminPage() {
       featured: property.featured,
       status: property.status,
       images: [],
+      amenities: property.amenities || [], // Add this line
     })
     setIsAddDialogOpen(true)
   }
@@ -183,6 +221,7 @@ export default function AdminPage() {
   }
 
   const resetForm = () => {
+    console.log("Resetting form")
     setFormData({
       title: "",
       location: "",
@@ -194,10 +233,11 @@ export default function AdminPage() {
       featured: false,
       status: "Available",
       images: [],
+      amenities: [],
     })
     setUploadedImages([])
     setImageFiles([])
-    setEditingProperty(null)
+    setEditingProperty(null) // Make sure this is set to null
   }
 
   return (
@@ -236,12 +276,19 @@ export default function AdminPage() {
           <Dialog
             open={isAddDialogOpen}
             onOpenChange={(open) => {
+              console.log("Dialog open state changing to:", open)
               setIsAddDialogOpen(open)
               if (!open) resetForm()
             }}
           >
             <DialogTrigger asChild>
-              <Button className="bg-rose-500 hover:bg-rose-600">
+              <Button
+                className="bg-rose-500 hover:bg-rose-600"
+                onClick={() => {
+                  console.log("Add Property button clicked")
+                  setIsAddDialogOpen(true)
+                }}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Property
               </Button>
@@ -395,6 +442,29 @@ export default function AdminPage() {
                   )}
                 </div>
 
+                <div>
+                  <Label>Amenities</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2 max-h-48 overflow-y-auto border rounded-lg p-3">
+                    {availableAmenities.map((amenity) => (
+                      <div key={amenity.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={amenity.id}
+                          checked={formData.amenities?.includes(amenity.id) || false}
+                          onChange={() => handleAmenityToggle(amenity.id)}
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor={amenity.id} className="text-sm cursor-pointer">
+                          {amenity.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Selected: {formData.amenities?.length || 0} amenities
+                  </div>
+                </div>
+
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="featured"
@@ -418,7 +488,7 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Total Properties</CardTitle>
@@ -455,16 +525,15 @@ export default function AdminPage() {
               <div className="text-2xl font-bold text-rose-600">{properties.filter((p) => p.featured).length}</div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">Pending Bookings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-yellow-600">3</div>
+            </CardContent>
+          </Card>
         </div>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Pending Bookings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">3</div>
-          </CardContent>
-        </Card>
 
         {/* Properties Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -516,6 +585,27 @@ export default function AdminPage() {
                   </div>
                   <div className="text-xl font-bold">${property.price.toLocaleString()}/mo</div>
                 </div>
+
+                {/* Amenities Preview */}
+                {property.amenities && property.amenities.length > 0 && (
+                  <div className="mb-3">
+                    <div className="flex flex-wrap gap-1">
+                      {property.amenities.slice(0, 3).map((amenityId) => {
+                        const amenity = availableAmenities.find((a) => a.id === amenityId)
+                        return amenity ? (
+                          <Badge key={amenityId} variant="outline" className="text-xs">
+                            {amenity.name}
+                          </Badge>
+                        ) : null
+                      })}
+                      {property.amenities.length > 3 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{property.amenities.length - 3} more
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between">
                   <div className="flex space-x-2">

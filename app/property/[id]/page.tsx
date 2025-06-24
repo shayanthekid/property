@@ -25,6 +25,18 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import BookingForm from "./booking"
 
+// Available amenities mapping
+const amenitiesMap = {
+  wifi: { icon: Wifi, name: "High-speed WiFi" },
+  parking: { icon: Car, name: "Parking included" },
+  fitness: { icon: Dumbbell, name: "Fitness center" },
+  pool: { icon: Waves, name: "Swimming pool" },
+  kitchen: { icon: ChefHat, name: "Modern kitchen" },
+  ac: { icon: Wind, name: "Air conditioning" },
+  security: { icon: Camera, name: "Security system" },
+  concierge: { icon: Shield, name: "24/7 concierge" },
+}
+
 // Mock property data
 const property = {
   id: 1,
@@ -46,16 +58,7 @@ const property = {
   ],
   description:
     "Experience luxury living in this stunning modern apartment located in the heart of downtown. This beautifully designed space features floor-to-ceiling windows, premium finishes, and breathtaking city views. Perfect for professionals and couples seeking a sophisticated urban lifestyle.",
-  amenities: [
-    { icon: Wifi, name: "High-speed WiFi" },
-    { icon: Car, name: "Parking included" },
-    { icon: Dumbbell, name: "Fitness center" },
-    { icon: Waves, name: "Swimming pool" },
-    { icon: ChefHat, name: "Modern kitchen" },
-    { icon: Wind, name: "Air conditioning" },
-    { icon: Camera, name: "Security system" },
-    { icon: Shield, name: "24/7 concierge" },
-  ],
+  amenities: ["wifi", "parking", "fitness", "pool", "kitchen", "ac", "security", "concierge"], // Update this to use IDs
   features: [
     "Floor-to-ceiling windows",
     "Hardwood floors throughout",
@@ -196,15 +199,20 @@ export default function PropertyDetailPage() {
             <div>
               <h3 className="text-xl font-semibold mb-4">Amenities</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {property.amenities.map((amenity, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <amenity.icon className="w-6 h-6 text-gray-600 mb-2" />
-                    <span className="text-sm text-gray-700 text-center">{amenity.name}</span>
-                  </div>
-                ))}
+                {property.amenities.map((amenityId, index) => {
+                  const amenity = amenitiesMap[amenityId]
+                  if (!amenity) return null
+
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <amenity.icon className="w-6 h-6 text-gray-600 mb-2" />
+                      <span className="text-sm text-gray-700 text-center">{amenity.name}</span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
